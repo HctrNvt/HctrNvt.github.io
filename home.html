@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatouille MIMI !</title>
+    <style>
+        body {
+            cursor: url("brosse.png");
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Curseur brosse */
+            cursor: url('https://cdn-icons-png.flaticon.com/32/2954/2954893.png'), auto;
+        }
+
+        #cat-visual {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; /* Garde les proportions de l'image */
+            transition: transform 0.1s;
+        }
+
+        /* Effet visuel quand le chat est en alerte (optionnel) */
+        .state-turning { border: 5px solid orange; box-sizing: border-box; }
+        .state-front { border: 5px solid red; box-sizing: border-box; }
+
+        #ui {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .score { font-size: 24px; font-weight: bold; }
+        .danger-meter {
+            width: 200px;
+            height: 10px;
+            background: #ddd;
+            margin: 10px auto;
+            border-radius: 5px;
+        }
+        #danger-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(to right, green, red);
+            border-radius: 5px;
+            transition: width 0.1s;
+        }
+        
+        #message {
+            height: 30px;
+            color: #d32f2f;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="score">Points : <span id="score-val">0</span></div>
+        <div id="message"></div>
+        <div class="danger-meter"><div id="danger-fill"></div></div>
+    </div>
+
+    <div id="game-container">
+        <!-- L'image de MIMI -->
+        <img id="cat-visual" src="MIMI_NRML.jpg" alt="Chat Mimi">
+    </div>
+
+    <button onclick="resetGame()">Recommencer</button>
+
+<script>
+        let score = 0;
+        let irritation = 0;
+        let gameState = "IDLE"; 
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+        let angryTimer = null;
+        
+        const catVisual = document.getElementById('cat-visual');
+        const scoreDisplay = document.getElementById('score-val');
+        const dangerFill = document.getElementById('danger-fill');
+        const messageDisplay = document.getElementById('message');
+
+        const WARNING_DURATION = 1500; 
+        const ANGRY_DURATION = 3000;   
+
+        document.getElementById('game-container').addEventListener('mousemove', (e) => {
+            if (gameState === "ANGRY") return;
+
+            let speed = Math.abs(e.clientX - lastMouseX) + Math.abs(e.clientY - lastMouseY);
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+
+            if (speed > 5) {
+                scratch(speed);
+            }
+        });
+
+        function scratch(intensity) {
+            if (gameState === "ANGRY") return;
+
+            // Si on bouge pendant qu'il se tourne ou qu'il regarde -> PERDU
+            if (gameState === "ANGRY_READY") {
+                gameOver();
+                return;
+            }
+
+            score += Math.floor(intensity / 10);
+            irritation += intensity / 50;
+
+            scoreDisplay.innerText = score;
+            updateUI();
+
+            if (gameState === "IDLE" && irritation > 20) {
+                if (Math.random() * 100 < irritation) {
+                    startWarning();
+                }
+            }
+        }
+
+        function updateUI() {
+            dangerFill.style.width = Math.min(irritation, 100) + "%";
+        }
+
+        function startWarning() {
+            gameState = "WARNING";
+            catVisual.src = "MIMI_WTF.jpg"; // Image de transition
+            catVisual.className = "state-turning";
+            messageDisplay.innerText = "ATTENTION ! ARRÊTE TOUT !";
+
+            let randomWarningTime = WARNING_DURATION * (Math.random() * (1 - 0.05) + 0.05);
+
+            setTimeout(() => {
+                if (gameState === "WARNING") {
+                    triggerAngry();
+                }
+            }, randomWarningTime);
+        }
+
+        function triggerAngry() {
+            gameState = "ANGRY_READY";
+            catVisual.src = "MIMI_NRV.jpg"; // Image de face énervée
+            catVisual.className = "state-front";
+            messageDisplay.innerText = "NE BOUGE PLUS...";
+
+            if (angryTimer) clearTimeout(angryTimer);
+
+            let randomAngryTime = ANGRY_DURATION * (Math.random() * 0.6 + 0.4);
+
+            angryTimer = setTimeout(() => {
+                if (gameState === "ANGRY_READY") {
+                    calmDown();
+                }
+            }, randomAngryTime);
+        }
+
+        function calmDown() {
+            gameState = "IDLE";
+            irritation = 0; 
+            updateUI();
+            
+            catVisual.src = "MIMI_NRML.jpg"; // Retour au dos
+            catVisual.className = "";
+            messageDisplay.innerText = "Ouf... Il s'est calmé.";
+        }
+
+        function gameOver() {
+            if (angryTimer) clearTimeout(angryTimer);
+            gameState = "ANGRY";
+            catVisual.src = "MIMI_NRV.jpg"; 
+            catVisual.className = "state-front";
+            messageDisplay.innerText = "GRRRRRR !!! (PERDU)";
+            dangerFill.style.backgroundColor = "black";
+        }
+
+        function resetGame() {
+            if (angryTimer) clearTimeout(angryTimer);
+            score = 0;
+            irritation = 0;
+            gameState = "IDLE";
+            scoreDisplay.innerText = "0";
+            messageDisplay.innerText = "";
+            dangerFill.style.width = "0%";
+            dangerFill.style.backgroundColor = "";
+            catVisual.src = "MIMI_NRML.jpg";
+            catVisual.className = "";
+        }
+
+        setInterval(() => {
+            if (gameState === "IDLE" && irritation > 0) {
+                irritation -= 0.8;
+                updateUI();
+            }
+        }, 100);
+    </script>
+</body>
+</html>
