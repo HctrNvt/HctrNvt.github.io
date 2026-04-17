@@ -170,10 +170,15 @@
 
         function triggerAngry() {
             gameState = "ANGRY_READY";
-            catVisual.src = "MIMI_NRV.jpg"; // Image de face énervée
             catVisual.className = "state-front";
             messageDisplay.innerText = "NE BOUGE PLUS...";
 
+            if (Math.random() < 0.001) {
+                catVisual.src = "MIMI_SOS.jpg";
+                gameOver();
+            } else {
+                catVisual.src = "MIMI_NRV.jpg"; // Image de face énervée
+            }
             if (angryTimer) clearTimeout(angryTimer);
 
             let randomAngryTime = ANGRY_DURATION * (Math.random() * 0.6 + 0.4);
@@ -198,9 +203,13 @@
         function gameOver() {
             if (angryTimer) clearTimeout(angryTimer);
             gameState = "ANGRY";
-            catVisual.src = "MIMI_NRV.jpg"; 
-            catVisual.className = "state-front";
+            // catVisual.src = "MIMI_NRV.jpg"; 
             messageDisplay.innerText = "GRRRRRR !!! (PERDU)";
+            if (catVisual.src = "MIMI_SOS.jpg"){
+                document.body.style.backgroundColor = "black";
+                messageDisplay.innerText = "ฉันกำลังเดินทางไปบ้านคุณ";
+            }
+            catVisual.className = "state-front";
             dangerFill.style.backgroundColor = "black";
         }
 
@@ -215,6 +224,7 @@
             dangerFill.style.backgroundColor = "";
             catVisual.src = "MIMI_NRML.jpg";
             catVisual.className = "";
+            document.body.style.backgroundColor = "#f0f0f0";
         }
 
         setInterval(() => {
